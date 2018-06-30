@@ -14,6 +14,11 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class MrMoney extends ApplicationAdapter {
+
+    private final int GAME_RUNNING = 1;
+    private final int GAME_LOADING = 0;
+    private final int GAME_OVER = -1;
+
     private SpriteBatch batch;
     private Texture background;
     private Texture[] man;
@@ -29,15 +34,15 @@ public class MrMoney extends ApplicationAdapter {
 
     private Random random;
     private Rectangle manRectangle;
+    private BitmapFont font;
 
     private int manState = 0;
     private int pauseManRender = 0;
     private float velocity = 0;
     private int manY;
     private int coinCount, bombCount;
-    private int score;
-    BitmapFont font;
-
+    private int score = 0;
+    private int currentGameState;
 
     @Override
     public void create() {
@@ -64,25 +69,50 @@ public class MrMoney extends ApplicationAdapter {
     public void render() {
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
-
-        makeBomb();
-        makeCoin();
-
-        setupManJump();
-        runSlowMan();
-
-        int manY = dropManFromSky();
+        setupGameState();
         drawMan(manY);
-
         updateScoreText();
-
 
         batch.end();
     }
 
+    private void setupGameState() {
+        switch (currentGameState) {
+            case GAME_RUNNING:
+                dropManFromSky();
+                makeBomb();
+                makeCoin();
+                setupManJump();
+                runSlowMan();
+                break;
+            case GAME_LOADING:
+                if (Gdx.input.justTouched()) {
+                    currentGameState = GAME_RUNNING;
+                }
+                break;
+            case GAME_OVER:
+                dropManFromSky();
+                if (Gdx.input.justTouched()) {
+                    currentGameState = GAME_RUNNING;
+                    manY = Gdx.graphics.getHeight() / 2;
+                    score = 0;
+                    velocity = 0;
+                    coinInXs.clear();
+                    coinInYs.clear();
+                    coinRectangles.clear();
+                    coinCount = 0;
+
+                    bombsInXs.clear();
+                    bombsInYs.clear();
+                    bombRectangles.clear();
+                    bombCount = 0;
+                }
+                break;
+        }
+    }
+
     private void updateScoreText() {
-        font.draw(batch,String.valueOf(score),100,200);
+        font.draw(batch, String.valueOf(score), 100, 200);
     }
 
     private void setupCollisionDetection() {
@@ -98,7 +128,7 @@ public class MrMoney extends ApplicationAdapter {
 
         for (int i = 0; i < bombRectangles.size(); i++) {
             if (Intersector.overlaps(manRectangle, bombRectangles.get(i))) {
-                Gdx.app.log("Money", "dead");
+                currentGameState = GAME_OVER;
                 break;
             }
         }
@@ -196,8 +226,18 @@ public class MrMoney extends ApplicationAdapter {
 
     private void drawMan(int y) {
         Texture currentMan = man[manState];
+        Texture confusedMan = new Texture("dizzy-1.png");
+
         int xWithManOffset = Gdx.graphics.getWidth() / 2 - currentMan.getWidth() / 2;
-        batch.draw(currentMan, xWithManOffset, y);
+        switch (currentGameState) {
+            case GAME_OVER:
+                batch.draw(confusedMan, xWithManOffset, y);
+                break;
+            default:
+                batch.draw(currentMan, xWithManOffset, y);
+
+                break;
+        }
 
         manRectangle = new Rectangle(xWithManOffset, y, currentMan.getWidth(), currentMan.getHeight());
         setupCollisionDetection();
