@@ -2,7 +2,9 @@ package com.mr.money.game;
 
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Rectangle;
@@ -34,6 +36,7 @@ public class MrMoney extends ApplicationAdapter {
     private int manY;
     private int coinCount, bombCount;
     private int score;
+    BitmapFont font;
 
 
     @Override
@@ -51,6 +54,10 @@ public class MrMoney extends ApplicationAdapter {
 
         manY = Gdx.graphics.getHeight() / 2;
         random = new Random();
+
+        font = new BitmapFont();
+        font.setColor(Color.WHITE);
+        font.getData().setScale(10);
     }
 
     @Override
@@ -68,23 +75,29 @@ public class MrMoney extends ApplicationAdapter {
         int manY = dropManFromSky();
         drawMan(manY);
 
+        updateScoreText();
+
 
         batch.end();
+    }
+
+    private void updateScoreText() {
+        font.draw(batch,String.valueOf(score),100,200);
     }
 
     private void setupCollisionDetection() {
         for (int i = 0; i < coinRectangles.size(); i++) {
             if (Intersector.overlaps(manRectangle, coinRectangles.get(i))) {
-                Gdx.app.log("Money", "got it");
                 score++;
                 coinRectangles.remove(i);
+                coinInXs.remove(i);
+                coinInYs.remove(i);
                 break;
             }
         }
 
         for (int i = 0; i < bombRectangles.size(); i++) {
             if (Intersector.overlaps(manRectangle, bombRectangles.get(i))) {
-
                 Gdx.app.log("Money", "dead");
                 break;
             }
@@ -156,7 +169,7 @@ public class MrMoney extends ApplicationAdapter {
             int x = bombsInXs.get(i);
             int y = bombsInYs.get(i);
             batch.draw(bomb, x, y);
-            bombsInXs.set(i, coinInXs.get(i) - 8);
+            bombsInXs.set(i, bombsInXs.get(i) - 8);
             bombRectangles.add(new Rectangle(x, y, bomb.getWidth(), bomb.getHeight()));
 
         }
