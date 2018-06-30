@@ -12,18 +12,23 @@ import com.badlogic.gdx.math.Rectangle;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 public class MrMoney extends ApplicationAdapter {
 
     private final int GAME_RUNNING = 1;
     private final int GAME_LOADING = 0;
     private final int GAME_OVER = -1;
+    private final int GAME_TIME_OVER = 2;
 
     private SpriteBatch batch;
     private Texture background;
     private Texture[] man;
     private Texture coin;
     private Texture bomb;
+
 
     private ArrayList<Integer> coinInXs = new ArrayList<Integer>();
     private ArrayList<Integer> coinInYs = new ArrayList<Integer>();
@@ -44,6 +49,11 @@ public class MrMoney extends ApplicationAdapter {
     private int score = 0;
     private int currentGameState;
 
+    int GAME_RUNTIME = (int) TimeUnit.SECONDS.toMillis(60);
+
+    int manLastY;
+    private Texture confusedMan, risingMan, fallingMan;
+
     @Override
     public void create() {
         batch = new SpriteBatch();
@@ -57,6 +67,11 @@ public class MrMoney extends ApplicationAdapter {
         coin = new Texture("coin.png");
         bomb = new Texture("bomb.png");
 
+        confusedMan = new Texture("dizzy-1.png");
+        risingMan = new Texture("rising.png");
+        fallingMan = new Texture("falling.png");
+
+
         manY = Gdx.graphics.getHeight() / 2;
         random = new Random();
 
@@ -65,12 +80,18 @@ public class MrMoney extends ApplicationAdapter {
         font.getData().setScale(10);
     }
 
+    private void showMessage(String msg) {
+        int x = 0;
+        int y = Gdx.graphics.getHeight() / 2;
+        font.draw(batch, msg, x, y);
+    }
+
     @Override
     public void render() {
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         setupGameState();
-        drawMan(manY);
+        drawMan();
         updateScoreText();
 
         batch.end();
@@ -86,13 +107,14 @@ public class MrMoney extends ApplicationAdapter {
                 runSlowMan();
                 break;
             case GAME_LOADING:
-                font.draw(batch, "Tap to play", 100, 600);
+                showMessage("Tap to play");
                 if (Gdx.input.justTouched()) {
                     currentGameState = GAME_RUNNING;
                 }
                 break;
+
             case GAME_OVER:
-                font.draw(batch, "Game Over", 100, 600);
+                showMessage("Game Over");
                 dropManFromSky();
                 if (Gdx.input.justTouched()) {
                     currentGameState = GAME_RUNNING;
@@ -111,6 +133,22 @@ public class MrMoney extends ApplicationAdapter {
                 }
                 break;
         }
+    }
+
+    private void setupTimer() {
+        new Timer().scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Gdx.app.log("COIN", String.valueOf(GAME_RUNTIME));
+                if (GAME_RUNTIME == 0) {
+                    //currentGameState = GAME_OVER;
+                } else {
+                    font.draw(batch, String.valueOf(GAME_RUNTIME), 300, 600);
+                    --GAME_RUNTIME;
+
+                }
+            }
+        }, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(1));
     }
 
     private void updateScoreText() {
@@ -155,7 +193,7 @@ public class MrMoney extends ApplicationAdapter {
         }
     }
 
-    private int dropManFromSky() {
+    private void dropManFromSky() {
         float gravity = 0.2f;
         velocity = velocity + gravity;
         manY -= velocity;
@@ -163,8 +201,6 @@ public class MrMoney extends ApplicationAdapter {
         if (manY <= 0) {
             manY = 0;
         }
-
-        return manY;
 
     }
 
@@ -226,24 +262,25 @@ public class MrMoney extends ApplicationAdapter {
         }
     }
 
-    private void drawMan(int y) {
-        Texture currentMan = man[manState];
-        Texture confusedMan = new Texture("dizzy-1.png");
+    private void drawMan() {
+        Texture currentMan;
+        boolean manRising = manY > manLastY;
 
-        int xWithManOffset = Gdx.graphics.getWidth() / 2 - currentMan.getWidth() / 2;
-        switch (currentGameState) {
-            case GAME_OVER:
-                batch.draw(confusedMan, xWithManOffset, y);
-                break;
-            default:
-                batch.draw(currentMan, xWithManOffset, y);
-
-                break;
+        if (currentGameState == GAME_OVER) {
+            currentMan = confusedMan;
+        } else if (manY > manLastY) {
+            currentMan = risingMan;
+        } else if (manY != 0 && !manRising) {
+            currentMan = fallingMan;
+        } else {
+            currentMan = man[manState];
         }
 
-        manRectangle = new Rectangle(xWithManOffset, y, currentMan.getWidth(), currentMan.getHeight());
+        int xWithManOffset = Gdx.graphics.getWidth() / 2 - currentMan.getWidth() / 2;
+        batch.draw(currentMan, xWithManOffset, manY);
+        manRectangle = new Rectangle(xWithManOffset, manY, currentMan.getWidth(), currentMan.getHeight());
         setupCollisionDetection();
-
+        manLastY = manY;
 
     }
 
