@@ -4,6 +4,9 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Intersector;
+import com.badlogic.gdx.math.Rectangle;
+
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -19,13 +22,18 @@ public class MrMoney extends ApplicationAdapter {
     private ArrayList<Integer> coinInYs = new ArrayList<Integer>();
     private ArrayList<Integer> bombsInXs = new ArrayList<Integer>();
     private ArrayList<Integer> bombsInYs = new ArrayList<Integer>();
+    private ArrayList<Rectangle> coinRectangles = new ArrayList<Rectangle>();
+    private ArrayList<Rectangle> bombRectangles = new ArrayList<Rectangle>();
+
     private Random random;
+    private Rectangle manRectangle;
 
     private int manState = 0;
     private int pauseManRender = 0;
     private float velocity = 0;
     private int manY;
     private int coinCount, bombCount;
+    private int score;
 
 
     @Override
@@ -51,16 +59,36 @@ public class MrMoney extends ApplicationAdapter {
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 
-        makeCoin();
         makeBomb();
+        makeCoin();
+
+        setupManJump();
+        runSlowMan();
 
         int manY = dropManFromSky();
         drawMan(manY);
-        runSlowMan();
 
-        setupManJump();
 
         batch.end();
+    }
+
+    private void setupCollisionDetection() {
+        for (int i = 0; i < coinRectangles.size(); i++) {
+            if (Intersector.overlaps(manRectangle, coinRectangles.get(i))) {
+                Gdx.app.log("Money", "got it");
+                score++;
+                coinRectangles.remove(i);
+                break;
+            }
+        }
+
+        for (int i = 0; i < bombRectangles.size(); i++) {
+            if (Intersector.overlaps(manRectangle, bombRectangles.get(i))) {
+
+                Gdx.app.log("Money", "dead");
+                break;
+            }
+        }
     }
 
     private void makeBomb() {
@@ -109,17 +137,28 @@ public class MrMoney extends ApplicationAdapter {
     }
 
     private void drawCoin() {
+        coinRectangles.clear();
+
         for (int i = 0; i < coinInXs.size(); i++) {
-            batch.draw(coin, coinInXs.get(i), coinInYs.get(i));
+            int x = coinInXs.get(i);
+            int y = coinInYs.get(i);
+            batch.draw(coin, x, y);
             coinInXs.set(i, coinInXs.get(i) - 4);
+            coinRectangles.add(new Rectangle(x, y, coin.getWidth(), coin.getHeight()));
         }
     }
 
 
     private void drawBomb() {
+        coinRectangles.clear();
         for (int i = 0; i < bombsInXs.size(); i++) {
-            batch.draw(bomb, bombsInXs.get(i), bombsInYs.get(i));
-            bombsInXs.set(i, bombsInXs.get(i) - 4);
+
+            int x = bombsInXs.get(i);
+            int y = bombsInYs.get(i);
+            batch.draw(bomb, x, y);
+            bombsInXs.set(i, coinInXs.get(i) - 8);
+            bombRectangles.add(new Rectangle(x, y, bomb.getWidth(), bomb.getHeight()));
+
         }
     }
 
@@ -146,6 +185,11 @@ public class MrMoney extends ApplicationAdapter {
         Texture currentMan = man[manState];
         int xWithManOffset = Gdx.graphics.getWidth() / 2 - currentMan.getWidth() / 2;
         batch.draw(currentMan, xWithManOffset, y);
+
+        manRectangle = new Rectangle(xWithManOffset, y, currentMan.getWidth(), currentMan.getHeight());
+        setupCollisionDetection();
+
+
     }
 
     @Override
