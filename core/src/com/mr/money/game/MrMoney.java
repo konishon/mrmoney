@@ -86,11 +86,13 @@ public class MrMoney extends ApplicationAdapter {
                 runSlowMan();
                 break;
             case GAME_LOADING:
+                font.draw(batch, "Tap to play", 100, 600);
                 if (Gdx.input.justTouched()) {
                     currentGameState = GAME_RUNNING;
                 }
                 break;
             case GAME_OVER:
+                font.draw(batch, "Game Over", 100, 600);
                 dropManFromSky();
                 if (Gdx.input.justTouched()) {
                     currentGameState = GAME_RUNNING;
@@ -193,7 +195,7 @@ public class MrMoney extends ApplicationAdapter {
 
 
     private void drawBomb() {
-        coinRectangles.clear();
+        bombRectangles.clear();
         for (int i = 0; i < bombsInXs.size(); i++) {
 
             int x = bombsInXs.get(i);
