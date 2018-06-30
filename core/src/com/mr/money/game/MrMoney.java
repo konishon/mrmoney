@@ -34,10 +34,19 @@ public class MrMoney extends ApplicationAdapter {
     public void render() {
         batch.begin();
         batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        makeManJump();
+
         int manY = dropManFromSky();
         drawMan(manY);
         runSlowMan();
         batch.end();
+    }
+
+    private void makeManJump() {
+        if (Gdx.input.justTouched()) {
+            velocity = -10;
+        }
     }
 
     private int dropManFromSky() {
