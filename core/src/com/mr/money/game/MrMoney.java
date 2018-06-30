@@ -13,16 +13,19 @@ public class MrMoney extends ApplicationAdapter {
     private Texture background;
     private Texture[] man;
     private Texture coin;
+    private Texture bomb;
 
     private ArrayList<Integer> coinInXs = new ArrayList<Integer>();
     private ArrayList<Integer> coinInYs = new ArrayList<Integer>();
+    private ArrayList<Integer> bombsInXs = new ArrayList<Integer>();
+    private ArrayList<Integer> bombsInYs = new ArrayList<Integer>();
     private Random random;
 
     private int manState = 0;
     private int pauseManRender = 0;
     private float velocity = 0;
     private int manY;
-    private int coinCount;
+    private int coinCount, bombCount;
 
 
     @Override
@@ -36,6 +39,7 @@ public class MrMoney extends ApplicationAdapter {
         man[3] = new Texture("frame-4.png");
 
         coin = new Texture("coin.png");
+        bomb = new Texture("bomb.png");
 
         manY = Gdx.graphics.getHeight() / 2;
         random = new Random();
@@ -48,6 +52,7 @@ public class MrMoney extends ApplicationAdapter {
 
 
         makeCoin();
+        makeBomb();
 
         int manY = dropManFromSky();
         drawMan(manY);
@@ -56,6 +61,19 @@ public class MrMoney extends ApplicationAdapter {
         setupManJump();
 
         batch.end();
+    }
+
+    private void makeBomb() {
+        if (bombCount < 400) {
+            bombCount++;
+        } else {
+            bombCount = 0;
+            float height = random.nextFloat() * Gdx.graphics.getHeight();
+            bombsInYs.add((int) height);
+            bombsInXs.add(Gdx.graphics.getWidth());
+        }
+
+        drawBomb();
     }
 
     private void setupManJump() {
@@ -96,6 +114,15 @@ public class MrMoney extends ApplicationAdapter {
             coinInXs.set(i, coinInXs.get(i) - 4);
         }
     }
+
+
+    private void drawBomb() {
+        for (int i = 0; i < bombsInXs.size(); i++) {
+            batch.draw(bomb, bombsInXs.get(i), bombsInYs.get(i));
+            bombsInXs.set(i, bombsInXs.get(i) - 4);
+        }
+    }
+
 
     private void makeManRun() {
         if (manState < 3) {
